@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WPFGnatAuditer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="GNAT Auditor" MinHeight="600" Height="600" MinWidth="400" Width="900" Background="#2E2E2E" 
+        Title="GNAT Auditer" MinHeight="600" Height="600" MinWidth="400" Width="900" Background="#2E2E2E" 
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" Foreground="White">
     <Window.Resources>
         <!-- Button Style -->
