@@ -1,12 +1,9 @@
 ﻿using ExcelDataReader;
 using Microsoft.Win32;
 using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -18,7 +15,7 @@ namespace WPFGnatAuditer
         private static readonly string folderPath = "";
         private static readonly string fileName = "";
         private string fullPath = Path.Combine(folderPath, fileName);
-        private string connectionString;
+        private string connectionString = "";
         private List<CiEntry> ciEntries = new();
 
         public MainWindow()
@@ -29,7 +26,7 @@ namespace WPFGnatAuditer
 
         private void ExtractExcelButton_Click(object sender, RoutedEventArgs e)
         {
-            StatusEllipse1.Fill = new SolidColorBrush(Colors.Orange);
+            StatusEllipse1.Fill = GetSolidColor("Orange");
             Log("Starting data extraction...");
 
             try
@@ -38,22 +35,38 @@ namespace WPFGnatAuditer
             }
             catch (Exception ex)
             {
-                StatusEllipse1.Fill = new SolidColorBrush(Colors.Red);
+                StatusEllipse1.Fill = GetSolidColor("Red");
                 LogError("ERROR OCCURRED WHILE EXTRACTING DATA:", ex);
+            }
+        }
+
+        private static SolidColorBrush GetSolidColor(string color)
+        {
+            switch (color)
+            {
+                case "Orange":
+                    return new SolidColorBrush(Colors.Orange);
+                case "Red":
+                    return new SolidColorBrush(Colors.Red);
+                case "Green":
+                    return new SolidColorBrush(Colors.Green);
+                default:
+                    return new SolidColorBrush(Colors.Black);
             }
         }
 
         private void UpdateDatabaseButton_Click(object sender, RoutedEventArgs e)
         {
-            StatusEllipse2.Fill = new SolidColorBrush(Colors.Orange);
+            StatusEllipse2.Fill = GetSolidColor("Orange");
 
             try
             {
-                UpdateDatabase();
+                Log(ciEntries[0].CiEntriesId.ToString());
+                //UpdateDatabase();
             }
             catch (Exception ex)
             {
-                StatusEllipse2.Fill = new SolidColorBrush(Colors.Red);
+                StatusEllipse2.Fill = GetSolidColor("Red");
                 LogError("ERROR ENCOUNTERED:", ex);
             }
         }
@@ -108,7 +121,7 @@ namespace WPFGnatAuditer
 
                 transaction.Commit();
                 Log($"Update completed. Total affected rows: {totalAffectedRows}.");
-                StatusEllipse2.Fill = new SolidColorBrush(Colors.Green);
+                StatusEllipse2.Fill = GetSolidColor("Green");
                 UpdateDatabaseButton.IsEnabled = false;
             }
             catch (Exception ex)
@@ -145,31 +158,75 @@ namespace WPFGnatAuditer
             using var reader = ExcelReaderFactory.CreateReader(stream);
             var result = reader.AsDataSet();
             var table = result.Tables[0]; // Assuming the data is in the first sheet
+            var firstRow = table.Rows[0];
 
             int goodItems = 0, badItems = 0;
 
-            for (int i = 1; i < table.Rows.Count; i++)
+            if (CheckFirstRowValid(firstRow))
             {
-                var row = table.Rows[i];
-
-                if (IsRowValid(row))
+                for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    goodItems++;
-                    ciEntries.Add(CreateCiEntryFromRow(row));
-                }
-                else
-                {
-                    badItems++;
+                    var row = table.Rows[i];
+                    if (IsRowValid(row))
+                    {
+                        goodItems++;
+                        try
+                        {
+                            ciEntries.Add(CreateCiEntryFromRow(row));
+                        }
+                        catch (Exception ex)
+                        {
+                            LogError($"Failed to create CI entry from row {i}", ex);
+                        }
+                    }
+                    else
+                    {
+                        badItems++;
+                    }
                 }
             }
+            else
+            {
+                Log("Check specifications.");
+            }
 
-            Log($"Extraction stats\nGood rows: {goodItems}\nBad rows: {badItems}");
+            Log($"Extraction stats\nRows with CI_ENTRY_ID: {goodItems}\nMissing CI_ENTRY_ID: {badItems}");
             Log("Extraction complete, ready to insert into DB.");
             UpdateDatabaseButton.IsEnabled = true;
             ExtractExcelButton.IsEnabled = false;
-            StatusEllipse1.Fill = new SolidColorBrush(Colors.Green);
+            StatusEllipse1.Fill = GetSolidColor("Green");
         }
 
+        private bool CheckFirstRowValid(DataRow row)
+        {
+            if 
+                (
+                    row[0].ToString() == "R Location"
+                    && row[1].ToString() == "R Specific Location"
+                    && row[2].ToString() == "R SubZone"
+                    && row[3].ToString() == "R Site"
+                    && row[4].ToString() == "R SubSite"
+                    && row[5].ToString() == "R Component"
+                    && row[6].ToString() == "R SubComponent"
+                    && row[7].ToString() == "R Node"
+                    && row[8].ToString() == "R Probe SC"
+                    && row[9].ToString() == "R CI Priority"
+                    && row[10].ToString() == "R Type"
+                    && row[11].ToString() == "R State"
+                    && row[12].ToString() == "R CI Description"
+                    && row[13].ToString() == "R CI Name"
+                    && row[14].ToString() == "GN CI ID"
+                )
+            {
+                Log("Rows are in order, data extraction begins.");
+                return true;
+            }
+            else
+            {
+                Log("Rows are not ordered correctly, extraction stopped.");
+                return false;
+            }
+        }
         private bool IsRowValid(DataRow row)
         {
             return !string.IsNullOrWhiteSpace(row[14]?.ToString()) && row[14].ToString().All(char.IsDigit);
@@ -178,7 +235,7 @@ namespace WPFGnatAuditer
         private CiEntry CreateCiEntryFromRow(DataRow row)
         {
             return new CiEntry(
-                row[14]?.ToString(),
+                int.Parse(row[14]?.ToString()),
                 row[0]?.ToString(),
                 row[1]?.ToString(),
                 row[2]?.ToString(),
@@ -196,133 +253,133 @@ namespace WPFGnatAuditer
             );
         }
 
-        static string MapCiPriority(string priority) => priority switch
+        static int MapCiPriority(string priority) => priority switch
         {
-            "Critical" => "4",
-            "High" => "3",
-            "Medium" => "2",
-            "Low" => "1",
-            _ => string.Empty
+            "Critical" => 4,
+            "High" => 3,
+            "Medium" => 2,
+            "Low" => 1,
+            _ => 1
         };
 
-        static string MapCiType(string type) => type switch
+        static int MapCiType(string type) => type switch
         {
-            "Enrichment Testing" => "1",
-            "AMB" => "2",
-            "ATR" => "3",
-            "CAM" => "4",
-            "CCGW" => "5",
-            "CEB" => "6",
-            "Channel" => "7",
-            "Controller" => "8",
-            "Conventional" => "9",
-            "Core Router" => "10",
-            "Database Server" => "11",
-            "DIU" => "12",
-            "Environmental" => "13",
-            "Exit Router" => "14",
-            "GAS Server" => "15",
-            "Gateway Router" => "16",
-            "LAN Switch" => "17",
-            "Link" => "18",
-            "Logging Recorder" => "19",
-            "MGEG" => "20",
-            "Microwave" => "21",
-            "Moscad Server" => "22",
-            "NTP" => "23",
-            "OP" => "24",
-            "QUANTAR" => "25",
-            "RDM" => "26",
-            "Router" => "27",
-            "RTU" => "28",
-            "Site" => "29",
-            "Statistical Server" => "30",
-            "Switch" => "31",
-            "TENSR" => "32",
-            "Terminal Server" => "33",
-            "TRAK" => "34",
-            "UCS" => "35",
-            "UEM" => "36",
-            "VMS" => "37",
-            "VPM" => "38",
-            "ZDS" => "39",
-            "Zone Controller" => "40",
-            "Gateway Unit" => "41",
-            "Data Basestation" => "42",
-            "Agent" => "43",
-            "Camera" => "44",
-            "Infrastructure(CHI CAM)" => "45",
-            "LTE" => "46",
-            "Network Device" => "47",
-            "Logging Replay Station" => "48",
-            "Network Address" => "49",
-            "Generic Node" => "50",
-            "Call Processor" => "51",
-            "Data Processing" => "52",
-            "Domain Controller" => "53",
-            "Backup Server" => "54",
-            "Virtual Machine" => "55",
-            "Client Station" => "56",
-            "Install Server" => "57",
-            "ARCA DACS" => "58",
-            "Packet Data Gateway" => "59",
-            "RNG" => "60",
-            "ADSP" => "61",
-            "AP" => "62",
-            "Firewall" => "63",
-            "IDF" => "64",
-            "MDF" => "65",
-            "NX" => "66",
-            "RFS" => "67",
-            "UPS" => "68",
-            "IPDU" => "69",
-            "Device Config Server" => "70",
-            "Trap Forwarder" => "71",
-            "Jump Server" => "72",
-            "ESX" => "73",
-            "Gateway" => "74",
-            "EXINDA" => "75",
-            "Licensing Service" => "76",
-            "Netcool Server" => "77",
-            "DNS" => "78",
-            "CPG" => "79",
-            "MME" => "80",
-            "SPM" => "81",
-            "HSS" => "82",
-            "PTT" => "83",
-            "Security" => "84",
-            "Object Server" => "85",
-            "Firewall Bridge" => "86",
-            "WebGUI" => "87",
-            "Probe" => "88",
-            "Impact" => "89",
-            "Probe Server" => "90",
-            "Guest WIFI" => "91",
-            "OSS" => "92",
-            "Base Radio" => "93",
-            "Short Data Router" => "94",
-            "Telephony" => "95",
-            "AUC" => "96",
-            "OSP" => "97",
-            "Core" => "98",
-            "OMADM" => "99",
-            "Unknown" => "100",
-            "MUX" => "101",
-            "CCE" => "102",
-            "Rectifier" => "103",
-            "Alias Server" => "105",
-            "Core Dispatch Comm Server" => "107",
-            "MTIG" => "109",
-            _ => "100"
+            "Enrichment Testing" => 1,
+            "AMB" => 2,
+            "ATR" => 3,
+            "CAM" => 4,
+            "CCGW" => 5,
+            "CEB" => 6,
+            "Channel" => 7,
+            "Controller" => 8,
+            "Conventional" => 9,
+            "Core Router" => 10,
+            "Database Server" => 11,
+            "DIU" => 12,
+            "Environmental" => 13,
+            "Exit Router" => 14,
+            "GAS Server" => 15,
+            "Gateway Router" => 16,
+            "LAN Switch" => 17,
+            "Link" => 18,
+            "Logging Recorder" => 19,
+            "MGEG" => 20,
+            "Microwave" => 21,
+            "Moscad Server" => 22,
+            "NTP" => 23,
+            "OP" => 24,
+            "QUANTAR" => 25,
+            "RDM" => 26,
+            "Router" => 27,
+            "RTU" => 28,
+            "Site" => 29,
+            "Statistical Server" => 30,
+            "Switch" => 31,
+            "TENSR" => 32,
+            "Terminal Server" => 33,
+            "TRAK" => 34,
+            "UCS" => 35,
+            "UEM" => 36,
+            "VMS" => 37,
+            "VPM" => 38,
+            "ZDS" => 39,
+            "Zone Controller" => 40,
+            "Gateway Unit" => 41,
+            "Data Basestation" => 42,
+            "Agent" => 43,
+            "Camera" => 44,
+            "Infrastructure(CHI CAM)" => 45,
+            "LTE" => 46,
+            "Network Device" => 47,
+            "Logging Replay Station" => 48,
+            "Network Address" => 49,
+            "Generic Node" => 50,
+            "Call Processor" => 51,
+            "Data Processing" => 52,
+            "Domain Controller" => 53,
+            "Backup Server" => 54,
+            "Virtual Machine" => 55,
+            "Client Station" => 56,
+            "Install Server" => 57,
+            "ARCA DACS" => 58,
+            "Packet Data Gateway" => 59,
+            "RNG" => 60,
+            "ADSP" => 61,
+            "AP" => 62,
+            "Firewall" => 63,
+            "IDF" => 64,
+            "MDF" => 65,
+            "NX" => 66,
+            "RFS" => 67,
+            "UPS" => 68,
+            "IPDU" => 69,
+            "Device Config Server" => 70,
+            "Trap Forwarder" => 71,
+            "Jump Server" => 72,
+            "ESX" => 73,
+            "Gateway" => 74,
+            "EXINDA" => 75,
+            "Licensing Service" => 76,
+            "Netcool Server" => 77,
+            "DNS" => 78,
+            "CPG" => 79,
+            "MME" => 80,
+            "SPM" => 81,
+            "HSS" => 82,
+            "PTT" => 83,
+            "Security" => 84,
+            "Object Server" => 85,
+            "Firewall Bridge" => 86,
+            "WebGUI" => 87,
+            "Probe" => 88,
+            "Impact" => 89,
+            "Probe Server" => 90,
+            "Guest WIFI" => 91,
+            "OSS" => 92,
+            "Base Radio" => 93,
+            "Short Data Router" => 94,
+            "Telephony" => 95,
+            "AUC" => 96,
+            "OSP" => 97,
+            "Core" => 98,
+            "OMADM" => 99,
+            "Unknown" => 100,
+            "MUX" => 101,
+            "CCE" => 102,
+            "Rectifier" => 103,
+            "Alias Server" => 105,
+            "Core Dispatch Comm Server" => 107,
+            "MTIG" => 109,
+            _ => 100
            
-};
+        };
 
-        static string MapCiState(string state) => state switch
+        static int MapCiState(string state) => state switch
         {
-            "Production" => "1",
-            "PreProduction" => "2",
-            "Decommissioned" => "3",
-            _ => string.Empty
+            "Production" => 1,
+            "PreProduction" => 2,
+            "Decommissioned" => 3,
+            _ => 1
         };
 
         private void SelectFileButton_Click(object sender, RoutedEventArgs e)
@@ -353,48 +410,6 @@ namespace WPFGnatAuditer
         private void LogError(string message, Exception ex)
         {
             Log($"{message} {ex.Message}");
-        }
-    }
-
-    public class CiEntry
-    {
-        public string CiEntriesId { get; }
-        public string Location { get; }
-        public string SpecificLocation { get; }
-        public string SubZone { get; }
-        public string Site { get; }
-        public string SubSite { get; }
-        public string Component { get; }
-        public string SubComponent { get; }
-        public string Node { get; }
-        public string ProbeSc { get; }
-        public string CiPriority { get; }
-        public string Type { get; }
-        public string State { get; }
-        public string CiDescription { get; }
-        public string CiName { get; }
-
-        public CiEntry(
-            string ciEntriesId, string location, string specificLocation, string subZone,
-            string site, string subSite, string component, string subComponent,
-            string node, string probeSc, string ciPriority, string type, string state,
-            string ciDescription, string ciName)
-        {
-            CiEntriesId = ciEntriesId;
-            Location = location;
-            SpecificLocation = specificLocation;
-            SubZone = subZone;
-            Site = site;
-            SubSite = subSite;
-            Component = component;
-            SubComponent = subComponent;
-            Node = node;
-            ProbeSc = probeSc;
-            CiPriority = ciPriority;
-            Type = type;
-            State = state;
-            CiDescription = ciDescription;
-            CiName = ciName;
         }
     }
 }
