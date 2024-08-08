@@ -61,8 +61,7 @@ namespace WPFGnatAuditer
 
             try
             {
-                Log(ciEntries[0].CiEntriesId.ToString());
-                //UpdateDatabase();
+                UpdateDatabase();
             }
             catch (Exception ex)
             {
