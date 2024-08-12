@@ -214,7 +214,7 @@ namespace WPFGnatAuditer
                     && row[11].ToString() == "R State"
                     && row[12].ToString() == "R CI Description"
                     && row[13].ToString() == "R CI Name"
-                    && row[14].ToString() == "GN CI ID"
+                    && row[14].ToString() == "GN CI_ENTRIES_ID"
                 )
             {
                 Log("Rows are in order, data extraction begins.");
