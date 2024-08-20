@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using MySql.Data.MySqlClient;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -22,6 +23,23 @@ namespace WPFGnatAuditer
         {
             InitializeComponent();
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        }
+
+        private void MenuItemExit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
+        private void MenuItemDocumentation_Click(object sender, RoutedEventArgs e) 
+        {
+            string url = "https://wiki.nodnett.no/en/OSS-Knowledge-DB/applications/wpf-gnat-auditer";
+
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+               
+            startInfo.FileName = "explorer.exe";
+            startInfo.Arguments = url;
+            Process.Start(startInfo);
+
         }
 
         private void ExtractExcelButton_Click(object sender, RoutedEventArgs e)

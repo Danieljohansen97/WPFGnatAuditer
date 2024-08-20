@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WPFGnatAuditer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="GNAT Auditer" MinHeight="600" Height="600" MinWidth="400" Width="900" Background="#2E2E2E" 
+        Title="GNAT Auditer" MinHeight="650" Height="650" MinWidth="400" Width="900" Background="#2E2E2E" 
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" Foreground="White">
     <Window.Resources>
         <!-- Button Style -->
@@ -88,69 +88,99 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="250"/>
-            <RowDefinition Height="75"/>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="20" />
+            <RowDefinition />
         </Grid.RowDefinitions>
 
-        <!-- Input Section -->
+        <!-- Header Section-->
         <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-
-            <!-- File inputs -->
-            <StackPanel Orientation="Vertical" Width="250" HorizontalAlignment="Left">
-                <Button Name="SelectFileButton" Content="Select Excel File" Click="SelectFileButton_Click" Margin="0,10,0,0"/>
-                <TextBox Name="FilePathTextBox" IsReadOnly="True" Margin="0,10,0,0"/>
-            </StackPanel>
-
-            <!-- DB Inputs -->
-            <StackPanel Orientation="Vertical" Width="250" HorizontalAlignment="Left" Grid.Column="1">
-                <TextBlock Text="Server Address:"/>
-                <TextBox Name="ServerAddressTextBox"/>
-                <TextBlock Text="Database Name:"/>
-                <TextBox Name="DatabaseNameTextBox"/>
-                <TextBlock Text="Username:"/>
-                <TextBox Name="UsernameTextBox"/>
-                <TextBlock Text="Password:"/>
-                <PasswordBox Name="PasswordBox"/>
-            </StackPanel>
+            <Menu>
+                <MenuItem Header="File">
+                    <MenuItem Header="Open File" Click="SelectFileButton_Click" />
+                    <MenuItem Header="Exit" Click="MenuItemExit_Click" />
+                </MenuItem>
+                <MenuItem Header="Help">
+                    <MenuItem Header="Documentation" Click="MenuItemDocumentation_Click" />
+                    <MenuItem Header="About" IsEnabled="False" />
+                </MenuItem>
+            </Menu>
         </Grid>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="160" />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
+        <!-- Content Section -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="250"/>
+                <RowDefinition Height="75"/>
+                <RowDefinition Height="50"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
             
-            <!-- Buttons Section -->             
-            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,20,0,0">
-                <Button Name="ExtractExcelButton" Content="Extract Excel Data" Click="ExtractExcelButton_Click"/>
-                <Button Name="UpdateDatabaseButton" Content="Update Database" Click="UpdateDatabaseButton_Click" IsEnabled="False"/>
-            </StackPanel>
-            <!-- Status -->
-            <StackPanel Orientation="Vertical" Grid.Column="1" Margin="0,20,0,0">
-                <Ellipse Name="StatusEllipse1" HorizontalAlignment="Left" Width="10" Height="10" Fill="DarkGray" Margin="0,13,0,0" />
-                <Ellipse Name="StatusEllipse2" HorizontalAlignment="Left" Width="10" Height="10" Fill="DarkGray" Margin="0,16,0,0" />
-            </StackPanel>
+            <!-- Input Section -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <!-- File inputs -->
+                <StackPanel Orientation="Vertical" Width="250" HorizontalAlignment="Left">
+                    <Button Name="SelectFileButton" Content="Select Excel File" Click="SelectFileButton_Click" Margin="0,10,0,0"/>
+                    <TextBox Name="FilePathTextBox" IsReadOnly="True" Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <!-- DB Inputs -->
+                <StackPanel Orientation="Vertical" Width="250" HorizontalAlignment="Left" Grid.Column="1">
+                    <TextBlock Text="Server Address:"/>
+                    <TextBox Name="ServerAddressTextBox"/>
+                    <TextBlock Text="Database Name:"/>
+                    <TextBox Name="DatabaseNameTextBox"/>
+                    <TextBlock Text="Username:"/>
+                    <TextBox Name="UsernameTextBox"/>
+                    <TextBlock Text="Password:"/>
+                    <PasswordBox Name="PasswordBox"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <!-- Buttons Section -->
+                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,20,0,0">
+                    <Button Name="ExtractExcelButton" Content="Extract Excel Data" Click="ExtractExcelButton_Click"/>
+                    <Button Name="UpdateDatabaseButton" Content="Update Database" Click="UpdateDatabaseButton_Click" IsEnabled="False"/>
+                </StackPanel>
+                <!-- Status -->
+                <StackPanel Orientation="Vertical" Grid.Column="1" Margin="0,20,0,0">
+                    <Ellipse Name="StatusEllipse1" HorizontalAlignment="Left" Width="10" Height="10" Fill="DarkGray" Margin="0,13,0,0" />
+                    <Ellipse Name="StatusEllipse2" HorizontalAlignment="Left" Width="10" Height="10" Fill="DarkGray" Margin="0,16,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Logs Section -->
+            <TextBlock Grid.Row="2" Text="Logs:" Margin="0,20,0,0"/>
+
+            <!-- Log Viewer -->
+            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0" Background="#404040" 
+              BorderThickness="1" BorderBrush="#007ACC">
+                <Border CornerRadius="5" Background="#404040" BorderBrush="#007ACC" BorderThickness="1">
+                    <TextBox Name="LogTextBox" IsReadOnly="True" TextWrapping="Wrap" Background="#404040" 
+                 Foreground="White" BorderThickness="0"/>
+                </Border>
+            </ScrollViewer>
+
+            <!-- Footer Section -->
+            <Grid Grid.Row="4">
+                <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right">Created by Daniel Johansen 2024</TextBlock>
+            </Grid>
+            <TextBlock HorizontalAlignment="Left" Margin="860,-87,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
         </Grid>
-
-        <!-- Logs Section -->
-        <TextBlock Grid.Row="2" Text="Logs:" Margin="0,20,0,0"/>
-
-        <!-- Log Viewer -->
-        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0" Background="#404040" 
-                      BorderThickness="1" BorderBrush="#007ACC">
-            <Border CornerRadius="5" Background="#404040" BorderBrush="#007ACC" BorderThickness="1">
-                <TextBox Name="LogTextBox" IsReadOnly="True" TextWrapping="Wrap" Background="#404040" 
-                         Foreground="White" BorderThickness="0"/>
-            </Border>
-        </ScrollViewer>
+        
+        
     </Grid>
 </Window>
